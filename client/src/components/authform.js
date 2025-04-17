@@ -1,9 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { db } from "../firebase"; // to connect to Firestore
-import { doc, setDoc } from "firebase/firestore"; // for saving data
-import { getDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 export default function AuthForm() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -11,6 +11,7 @@ export default function AuthForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const navigate = useNavigate(); // ✅ Add this
   const printToken = async () => {
     if (auth.currentUser) {
       const token = await auth.currentUser.getIdToken();
@@ -19,7 +20,7 @@ export default function AuthForm() {
       alert("User not logged in");
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -29,36 +30,30 @@ export default function AuthForm() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Save user role to Firestore
+        // Default new users to "user"
         await setDoc(doc(db, "users", user.uid), {
-            email: user.email,
-            role: "user" // Default role
+          email: user.email,
+          role: "user",
         });
 
         alert("Registered successfully!");
-
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Get the user's role from Firestore
         const docSnap = await getDoc(doc(db, "users", user.uid));
-
         if (docSnap.exists()) {
-            const role = docSnap.data().role;
-            console.log("User role:", role);
+          const role = docSnap.data().role;
+          console.log("User role:", role);
 
-            if (role === "admin") {
-                alert("Welcome, Admin!");
-                // TODO: Show admin-only features
-            } else {
-                alert("Welcome, User!");
-                // TODO: Show user-only features
-            }
+          if (role === "admin") {
+            navigate("/admin"); // ✅ Redirect admin
+          } else {
+            navigate("/home"); // ✅ Redirect user
+          }
         } else {
-            alert("No role found for this user.");
+          alert("No role found for this user.");
         }
-
       }
     } catch (err) {
       setError(err.message);
@@ -88,8 +83,8 @@ export default function AuthForm() {
         <button type="submit" style={{ width: "100%", padding: 10 }}>
           {isRegistering ? "Register" : "Login"}
         </button>
-        <button onClick={printToken} style={{ marginTop: 10 }}>
-        Get Firebase Token (for Postman)
+        <button onClick={printToken} type="button" style={{ marginTop: 10 }}>
+          Get Firebase Token (for Postman)
         </button>
       </form>
       <p style={{ color: "red" }}>{error}</p>
@@ -99,9 +94,3 @@ export default function AuthForm() {
     </div>
   );
 }
-
-/*To make someone an admin
-Step 1: Firebase Console → Firestore Database
-Step 2: Open "users" collection
-Step 3: Click on user document
-Step 4: Change "role": "user" to "role" : "admin"*/
