@@ -1,16 +1,23 @@
 import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthForm from "./components/authform";
+import Home from "./components/Home";
+import AdminDashboard from "./components/AdminDashboard";
 
 function App() {
   return (
-    <div style={{ fontFamily: "sans-serif", textAlign: "center", marginTop: "50px" }}>
-      <h1>Welcome to My App</h1>
-      <AuthForm />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<AuthForm />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Routes>
+    </Router>
   );
 }
 
 export default App;
+
 
 
 
